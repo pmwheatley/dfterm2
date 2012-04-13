@@ -47,7 +47,7 @@ data1D dfterm::hex_to_bytes(const data1D &hex)
             byte |= ((c1 - 'a' + 0xa) << 4);
         if (c2 >= '0' && c2 <= '9')
             byte |= (c2 - '0');
-        else if (c2 >= 'A' && c1 <= 'F')
+        else if (c2 >= 'A' && c2 <= 'F')
             byte |= (c2 - 'A' + 0xa);
         else if (c2 >= 'a' && c2 <= 'f')
             byte |= (c2 - 'a' + 0xa);
