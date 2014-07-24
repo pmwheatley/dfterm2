@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstring>
 #include "logger.hpp"
+#include "boost/thread/thread.hpp"
 #include "unicode/unistr.h"
 #include "unicode/ustring.h"
 

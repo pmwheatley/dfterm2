@@ -1,6 +1,7 @@
 #include "interface.hpp"
 #include "interface_ncurses.hpp"
 #include <algorithm>
+#include "boost/thread/thread.hpp"
 #include "unicode/ustring.h"
 #include "unicode/normlzr.h"
 #include <iostream>
