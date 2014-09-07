@@ -12,6 +12,7 @@ FIND_PATH(ICU_INCLUDE_PATH unistr.h
           /usr/local/include/unicode
           /usr/include/unicode
           /usr/include
+          /usr/include/x86_64-linux-gnu/unicode
           /usr/local/include
           /opt/include
           /opt/local/include
