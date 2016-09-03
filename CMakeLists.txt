@@ -23,15 +23,15 @@ FIND_PACKAGE (Threads REQUIRED)
 
 SET(NO_CURSES 1)
 
-SET(COMMON_SOURCE main.cc client.cc logger.cc slot.cc cp437_to_unicode.cc configuration_interface.cc configuration_db.cc sqlite3.c state.cc usergroup_serialize.cc id.cc hash.cc rng.cc minimal_http_server.cc server_to_server_configuration_pair.cc server_to_server_session.cc lua_configuration.cc sockets.cc telnet.cc nanoclock.cc cpp_regexes.cc types.cc socketevents.cc socketaddressrange.cc termemu.cc utf8.cc interface_ncurses.cc keypress.cc)
+SET(COMMON_SOURCE src/main.cc src/client.cc src/logger.cc src/slot.cc src/cp437_to_unicode.cc src/configuration_interface.cc src/configuration_db.cc src/sqlite3.c src/state.cc src/usergroup_serialize.cc src/id.cc src/hash.cc src/rng.cc src/minimal_http_server.cc src/server_to_server_configuration_pair.cc src/server_to_server_session.cc src/lua_configuration.cc src/sockets.cc src/telnet.cc src/nanoclock.cc src/cpp_regexes.cc src/types.cc src/socketevents.cc src/socketaddressrange.cc src/termemu.cc src/utf8.cc src/interface_ncurses.cc src/keypress.cc)
 
 # Some parts of dfterm2 work very differently on different platforms and use different source files.
 # Maybe we should add directories for platform-dependent files at some point.
 IF (WIN32)
-    add_executable(dfterm2 ${COMMON_SOURCE} slot_dfglue.cc pointerpath.cc)
+    add_executable(dfterm2 ${COMMON_SOURCE} src/slot_dfglue.cc src/pointerpath.cc)
     target_link_libraries(dfterm2 psapi)
 ELSE (WIN32)
-    add_executable(dfterm2 ${COMMON_SOURCE} slot_terminal.cc slot_linux_common.cc bsd_pty.cc pty.cc)
+    add_executable(dfterm2 ${COMMON_SOURCE} src/slot_terminal.cc src/slot_linux_common.cc src/bsd_pty.cc src/pty.cc)
     IF (NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
         target_link_libraries(dfterm2 dl)
     ENDIF (NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
@@ -44,7 +44,7 @@ ENDIF (WIN32)
 
 TARGET_LINK_LIBRARIES (dfterm2 ${COMMON_LIBS})
 
-add_executable(dfterm2_configure dfterm2_configure.cc configuration_db.cc sqlite3.c usergroup_serialize.cc logger.cc id.cc hash.cc rng.cc lua_configuration.cc utf8.cc types.cc socketaddressrange.cc sockets.cc cpp_regexes.cc)
+add_executable(dfterm2_configure src/dfterm2_configure.cc src/configuration_db.cc src/sqlite3.c src/usergroup_serialize.cc src/logger.cc src/id.cc src/hash.cc src/rng.cc src/lua_configuration.cc src/utf8.cc src/types.cc src/socketaddressrange.cc src/sockets.cc src/cpp_regexes.cc)
 IF(NOT WIN32)
     IF (NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
         target_link_libraries(dfterm2_configure dl ${COMMON_LIBS})
@@ -55,7 +55,7 @@ ELSE(NOT WIN32)
     target_link_libraries(dfterm2_configure ${COMMON_LIBS})
 ENDIF(NOT WIN32)
 
-add_executable(dfterm2_sha512 dfterm2_sha512.cc hash.cc)
+add_executable(dfterm2_sha512 src/dfterm2_sha512.cc src/hash.cc)
 IF(NOT WIN32)
     IF (NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
         target_link_libraries(dfterm2_sha512 dl ${COMMON_LIBS})
@@ -78,7 +78,7 @@ include_directories(${PCRE_INCLUDE_PATH})
 
 # The injection glue is only for Win32
 IF (WIN32)
-    add_library(dfterm_injection_glue SHARED dfterm_injection_glue.cc)
+    add_library(dfterm_injection_glue SHARED src/dfterm_injection_glue.cc)
     target_link_libraries(dfterm_injection_glue psapi)
 ENDIF (WIN32)
 
