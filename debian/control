@@ -1,0 +1,15 @@
+Source: dfterm2
+Section: unknown
+Priority: optional
+Maintainer: Phillip Wheatley <pmwheatley@gmail.com>
+Build-Depends: debhelper (>= 8.0.0), cmake, libicu-dev, libpcre3-dev, libboost-thread-dev, liblua5.1-0-dev, libssl-dev
+Standards-Version: 3.9.4
+Homepage: <insert the upstream URL, if relevant>
+#Vcs-Git: git://git.debian.org/collab-maint/dfterm2.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/dfterm2.git;a=summary
+
+Package: dfterm2
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>

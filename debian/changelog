@@ -1,0 +1,5 @@
+dfterm2 (0.17-1) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- Phillip Wheatley <pmwheatley@gmail.com>  Sat, 03 Sep 2016 03:54:00 +0200
