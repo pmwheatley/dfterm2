@@ -1,0 +1,6 @@
+/usr/local/bin/dfterm2
+/usr/local/bin/dfterm2_configure
+/usr/local/bin/dfterm2_sha512
+/home/ubuntu/.dfterm2/dfterm2.conf.old
+/home/ubuntu/.dfterm2/dfterm2.conf.win
+/home/ubuntu/.dfterm2/dfterm2.conf
