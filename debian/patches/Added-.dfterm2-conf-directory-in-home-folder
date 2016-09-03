@@ -1,0 +1,846 @@
+Description: <short summary of the patch>
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ dfterm2 (0.17-1) unstable; urgency=low
+ .
+   * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+Author: Phillip Wheatley <pmwheatley@gmail.com>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: http://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: <YYYY-MM-DD>
+
+--- /dev/null
++++ dfterm2-0.17/.dfterm2/dfterm2.conf.old
+@@ -0,0 +1,11 @@
++database = "dfterm2_database.sqlite3"
++logfile = "dfterm2.log"
++
++addresses = {
++   { name               = "DF 31.25",
++     size_address       = 0x0073507C,
++     screendata_address = 0x00734D1C,
++     checksum           = 0xFBFF0FC9,
++     method             = "PackedVarying" }
++ }
++
+--- /dev/null
++++ dfterm2-0.17/.dfterm2/dfterm2.conf.win
+@@ -0,0 +1,43 @@
++-- Configuration file for Windows.
++--
++database = os.getenv("APPDATA") .. "\\dfterm2\\dfterm2.database"
++logfile = os.getenv("APPDATA") .. "\\dfterm2\\dfterm2.log"
++
++addresses = {
++   { name               = "DF 0.31.25",
++     size_address       = 0x0073507C,
++     screendata_address = 0x00734D1C,
++     checksum           = 0xFBFF0FC9,
++     method             = "PackedVarying" },
++   { name               = "DF 0.34.02",
++     size_address       = 0x008100F4,
++     screendata_address = 0x0080FD94,
++     checksum           = 0xD635560F,
++     method             = "PackedVarying" },
++   { name               = "DF 0.34.03",
++     size_address       = 0x008090F4,
++     screendata_address = 0x00808D94,
++     checksum           = 0x59C5B3DF,
++     method             = "PackedVarying" },
++   { name               = "DF 0.34.04",
++     size_address       = 0x008090F4,
++     screendata_address = 0x00808D94,
++     checksum           = 0x5685E1E9,
++     method             = "PackedVarying" },
++   { name               = "DF 0.34.05", 
++     size_address       = 0x0080A0F4, 
++     screendata_address = 0x00809D94, 
++     checksum           = 0xEC10895F, 
++     method             = "PackedVarying" },
++   { name               = "DF 0.34.06", 
++     size_address       = 0x008560F4, 
++     screendata_address = 0x00855D94, 
++     checksum           = 0x3D0D62E7, 
++     method             = "PackedVarying" },
++   { name               = "DF 0.34.07",
++     size_address       = 0x0085B0F4,
++     screendata_address = 0x0085AD94,
++     checksum           = 0x2B33031D,
++     method             = "PackedVarying" }
++ }
++
+--- dfterm2-0.17.orig/CMakeLists.txt
++++ dfterm2-0.17/CMakeLists.txt
+@@ -102,4 +102,5 @@ ENDIF (PROFILE)
+ SET_TARGET_PROPERTIES(dfterm2_sha512 dfterm2 dfterm2_configure PROPERTIES COMPILE_DEFINITIONS _UNICODE)
+ 
+ install(TARGETS dfterm2 dfterm2_configure dfterm2_sha512 RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
++install(DIRECTORY .dfterm2 DESTINATION $ENV{HOME})
+ 
+--- /dev/null
++++ dfterm2-0.17/docs/CMakeLists.txt
+@@ -0,0 +1,105 @@
++cmake_minimum_required (VERSION 2.8)
++project (dfterm2)
++
++SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
++FIND_PACKAGE(Lua REQUIRED)
++INCLUDE_DIRECTORIES(${LUA_INCLUDE_PATH})
++
++FIND_PACKAGE(Boost 1.41.0 REQUIRED COMPONENTS thread system)
++INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
++INCLUDE_DIRECTORIES(.)
++link_directories(${Boost_LIBRARY_DIRS})
++
++FIND_PACKAGE(ICU REQUIRED)
++FIND_PACKAGE(PCRE REQUIRED)
++
++add_definitions(-DNO_DFHACK -D_LARGEFILE_SOURCE)
++
++IF(UNIX)
++  add_definitions(-DLINUX_BUILD)
++ENDIF(UNIX)
++
++FIND_PACKAGE (Threads REQUIRED)
++
++SET(NO_CURSES 1)
++
++SET(COMMON_SOURCE src/main.cc src/client.cc src/logger.cc src/slot.cc src/cp437_to_unicode.cc src/configuration_interface.cc src/configuration_db.cc src/sqlite3.c src/state.cc src/usergroup_serialize.cc src/id.cc src/hash.cc src/rng.cc src/minimal_http_server.cc src/server_to_server_configuration_pair.cc src/server_to_server_session.cc src/lua_configuration.cc src/sockets.cc src/telnet.cc src/nanoclock.cc src/cpp_regexes.cc src/types.cc src/socketevents.cc src/socketaddressrange.cc src/termemu.cc src/utf8.cc src/interface_ncurses.cc src/keypress.cc)
++
++# Some parts of dfterm2 work very differently on different platforms and use different source files.
++# Maybe we should add directories for platform-dependent files at some point.
++IF (WIN32)
++    add_executable(dfterm2 ${COMMON_SOURCE} src/slot_dfglue.cc src/pointerpath.cc)
++    target_link_libraries(dfterm2 psapi)
++ELSE (WIN32)
++    add_executable(dfterm2 ${COMMON_SOURCE} src/slot_terminal.cc src/slot_linux_common.cc src/bsd_pty.cc src/pty.cc)
++    IF (NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
++        target_link_libraries(dfterm2 dl)
++    ENDIF (NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
++ENDIF (WIN32)
++
++SET(COMMON_LIBS ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES} ${ICU_LIBRARIES} ${PCRE_LIBRARIES} ${LUA_LIBRARIES})
++IF (WIN32)
++    SET(COMMON_LIBS ${COMMON_LIBS} ws2_32)
++ENDIF (WIN32)
++
++TARGET_LINK_LIBRARIES (dfterm2 ${COMMON_LIBS})
++
++add_executable(dfterm2_configure src/dfterm2_configure.cc src/configuration_db.cc src/sqlite3.c src/usergroup_serialize.cc src/logger.cc src/id.cc src/hash.cc src/rng.cc src/lua_configuration.cc src/utf8.cc src/types.cc src/socketaddressrange.cc src/sockets.cc src/cpp_regexes.cc)
++IF(NOT WIN32)
++    IF (NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
++        target_link_libraries(dfterm2_configure dl ${COMMON_LIBS})
++    ELSE (NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
++        target_link_libraries(dfterm2_configure ${COMMON_LIBS})
++    ENDIF(NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
++ELSE(NOT WIN32)
++    target_link_libraries(dfterm2_configure ${COMMON_LIBS})
++ENDIF(NOT WIN32)
++
++add_executable(dfterm2_sha512 src/dfterm2_sha512.cc src/hash.cc)
++IF(NOT WIN32)
++    IF (NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
++        target_link_libraries(dfterm2_sha512 dl ${COMMON_LIBS})
++    ENDIF (NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
++ELSE(NOT WIN32)
++    target_link_libraries(dfterm2_sha512 ${COMMON_LIBS})
++ENDIF(NOT WIN32)
++
++FIND_PACKAGE(OpenSSL REQUIRED)
++include_directories(${OPENSSL_INCLUDE_DIR})
++target_link_libraries(dfterm2 ${OPENSSL_LIBRARIES})
++target_link_libraries(dfterm2_configure ${OPENSSL_LIBRARIES})
++target_link_libraries(dfterm2_sha512 ${OPENSSL_LIBRARIES})
++
++include_directories(.)
++include_directories(${ICU_INCLUDE_PATH})
++include_directories(${BOOST_ROOT})
++include_directories(${CURSES_INCLUDE_DIR})
++include_directories(${PCRE_INCLUDE_PATH})
++
++# The injection glue is only for Win32
++IF (WIN32)
++    add_library(dfterm_injection_glue SHARED src/dfterm_injection_glue.cc)
++    target_link_libraries(dfterm_injection_glue psapi)
++ENDIF (WIN32)
++
++IF (NO_CURSES)
++    IF (MSVC)
++        ADD_DEFINITIONS("/DNO_CURSES")
++    ENDIF (MSVC)
++    IF (CMAKE_COMPILER_IS_GNUCXX)
++        ADD_DEFINITIONS("-DNO_CURSES")
++    ENDIF ()
++ENDIF (NO_CURSES)
++
++IF (PROFILE)
++    IF (CMAKE_COMPILER_IS_GNUCXX)
++        ADD_DEFINITIONS("-pg")
++    ENDIF (CMAKE_COMPILER_IS_GNUCXX)
++
++    SET_TARGET_PROPERTIES(dfterm2_sha512 dfterm2 dfterm2_configure PROPERTIES LINK_FLAGS -pg)
++ENDIF (PROFILE)
++
++SET_TARGET_PROPERTIES(dfterm2_sha512 dfterm2 dfterm2_configure PROPERTIES COMPILE_DEFINITIONS _UNICODE)
++
++install(TARGETS dfterm2 dfterm2_configure dfterm2_sha512 RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
++install(DIRECTORY .dfterm2 DESTINATION $ENV{HOME})
+--- /dev/null
++++ dfterm2-0.17/docs/authors.txt
+@@ -0,0 +1,7 @@
++########################################################################
++
++The main developer of dfterm2 is Mikko Juola (mikjuo@gmail.com)
++(goes by the nickname Adeon in IRC and bay12 forums).
++
++Thanks to Remmon who helps me test dfterm2 on his server.
++
+--- /dev/null
++++ dfterm2-0.17/docs/build_instructions.txt
+@@ -0,0 +1,105 @@
++--- HOW TO BUILD DFTERM2 ---
++
++
++Check that you have the following libraries and their development
++files installed:
++
++    gcc                   -   Any recent version appears to work. (Linux)
++    or
++    Microsoft Visual C++  -   Version 10 has been used to compile the Windows
++                              version of dfterm2.
++
++    PCRE                  -   For Windows binaries, version 8.02 has been
++                              used.
++                              http://www.pcre.org/
++
++    Boost                 -   At least version 1.41.0. Dfterm2 uses
++                              some libraries that need compiled
++                              libraries from boost (threads).
++                              http://www.boost.org/
++    
++    OpenSSL               -   Dfterm2 needs it for secure random number
++                              generation and hashing algorithms.
++                              http://www.openssl.org/
++
++    ICU                   -   AKA International Components for Unicode.
++                              Dfterm2 is being built with version 4.4
++                              but it might work with older versions.
++                              http://site.icu-project.org/
++
++    Lua 5.1               -   Lua is a scripting language. It is used
++                              for configuration files.
++
++    CMake                 -   The tool dfterm2 is built with.
++                              http://www.cmake.org/
++
++
++
++--- BUILDING INSTRUCTIONS --- 
++
++    --- On Linux ---
++
++    1. Obtain the source code. If you are reading this,
++       chances are you already have the code.
++
++    $ git clone git://genodeen.net/dfterm2
++    $ cd dfterm2
++    
++    2. Run CMake to configure the building system.
++       If this step goes wrong, there can be missing
++       libraries or just misnamed libraries. At the moment
++       there is no extensive building testing platform for dfterm2.
++       CMake can be invoked with various parameters and
++       also has a GUI. Refer to its manual for more information.
++
++       The following command makes optimized binaries and
++       it usually defaults to plain Makefiles.
++
++    $ cmake -DCMAKE_BUILD_TYPE=Release .
++    
++    3. Build it.
++
++    $ make
++
++    4. Dfterm2 is ready. At the moment there is no automated
++       installer. You can run it from source directory
++       by running ./dfterm2
++
++    $ ./dfterm2
++
++    5. You probably want to add an admin account before
++       you log in though. This creates an admin account
++       with nickname "Adeon" and password "s3cret_p4ssw0rd".
++       If you drop the "admin" from end, it will create
++       a normal user instead.
++
++    $ ./dfterm2_configure --adduser Adeon s3cret_p4ssw0rd admin
++
++    6. You can configure slots and games from inside dfterm2 by
++       telnetting to it.
++
++    $ telnet 127.0.0.1 8000
++
++    7. Hopefully, the rest is intuitive. If not, then bad for you, ehehehehe.
++
++
++
++
++
++
++    --- On Windows ---
++
++    1. Grab yourself Microsoft Visual C++ 10 and Microsoft Windows SDK.
++
++    2. You likely need to manually either download development versions of
++       all libraries you need for Windows or compile them all yourself.
++       It can be complex, refer to each packages instructions.
++
++    3. Using CMake for Windows, configure dfterm2 and compile it with MSVC++
++
++    4. Starting and configuring dfterm2 is the same as with Linux, in 
++       steps #4 and #5.
++
++    5. There's a NSIS installer script in root directory that you can use
++       to build an installer package.
++
+--- /dev/null
++++ dfterm2-0.17/docs/install_manifest.txt
+@@ -0,0 +1,6 @@
++/usr/local/bin/dfterm2
++/usr/local/bin/dfterm2_configure
++/usr/local/bin/dfterm2_sha512
++/home/ubuntu/.dfterm2/dfterm2.conf.old
++/home/ubuntu/.dfterm2/dfterm2.conf.win
++/home/ubuntu/.dfterm2/dfterm2.conf
+--- /dev/null
++++ dfterm2-0.17/docs/license.txt
+@@ -0,0 +1,30 @@
++For dfterm2
++the license as follows:
++
++---------
++
++Copyright (c) 2010-2012, Mikko Juola
++All rights reserved.
++
++Redistribution and use in source and binary forms, with or without modification, are permitted provided 
++that the following conditions are met:
++
++    * Redistributions of source code must retain the above copyright notice, this list of conditions and 
++      the following disclaimer.
++    * Redistributions in binary form must reproduce the above copyright notice, this list of conditions 
++      and the following disclaimer in the documentation and/or other materials provided with the 
++      distribution.
++    * Neither the name of the author (Mikko Juola) nor the names of project's contributors may be used to 
++      endorse or promote products derived from this software without specific prior written permission.
++
++THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED 
++WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A 
++PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR 
++ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED 
++TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
++HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
++NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
++POSSIBILITY OF SUCH DAMAGE.
++
++---------
++
+--- /dev/null
++++ dfterm2-0.17/docs/license_for_nsis_installer.txt
+@@ -0,0 +1,11 @@
++Copyright (c) 2010-2012, Mikko Juola
++All rights reserved.
++
++Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
++
++    * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
++    * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
++    * Neither the name of the author (Mikko Juola) nor the names of project's contributors may be used to endorse or promote products derived from this software without specific prior written permission.
++
++THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
++NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+--- /dev/null
++++ dfterm2-0.17/docs/license_other.txt
+@@ -0,0 +1,186 @@
++To comply with other licenses used in dfterm2 or distributed with it, here they are:
++
++-------------------------------------------------
++ICU License - ICU 1.8.1 and later
++
++COPYRIGHT AND PERMISSION NOTICE
++
++Copyright (c) 1995-2010 International Business Machines Corporation and others 
++
++All rights reserved. 
++
++Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, provided that the above copyright notice(s) and this permission notice appear in all copies of the Software and that both the above copyright notice(s) and this permission notice appear in supporting documentation. 
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. 
++
++Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in this Software without prior written authorization of the copyright holder.
++---------------------------------------------------------------------
++
++
++
++
++OPENSSL:
++----------------------------------------------------------------------------
++  LICENSE ISSUES
++  ==============
++
++  The OpenSSL toolkit stays under a dual license, i.e. both the conditions of
++  the OpenSSL License and the original SSLeay license apply to the toolkit.
++  See below for the actual license texts. Actually both licenses are BSD-style
++  Open Source licenses. In case of any license issues related to OpenSSL
++  please contact openssl-core@openssl.org.
++
++  OpenSSL License
++  ---------------
++
++/* ====================================================================
++ * Copyright (c) 1998-2008 The OpenSSL Project.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ *
++ * 3. All advertising materials mentioning features or use of this
++ *    software must display the following acknowledgment:
++ *    "This product includes software developed by the OpenSSL Project
++ *    for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
++ *
++ * 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
++ *    endorse or promote products derived from this software without
++ *    prior written permission. For written permission, please contact
++ *    openssl-core@openssl.org.
++ *
++ * 5. Products derived from this software may not be called "OpenSSL"
++ *    nor may "OpenSSL" appear in their names without prior written
++ *    permission of the OpenSSL Project.
++ *
++ * 6. Redistributions of any form whatsoever must retain the following
++ *    acknowledgment:
++ *    "This product includes software developed by the OpenSSL Project
++ *    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
++ * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
++ * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
++ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
++ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
++ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
++ * OF THE POSSIBILITY OF SUCH DAMAGE.
++ * ====================================================================
++ *
++ * This product includes cryptographic software written by Eric Young
++ * (eay@cryptsoft.com).  This product includes software written by Tim
++ * Hudson (tjh@cryptsoft.com).
++ *
++ */
++
++ Original SSLeay License
++ -----------------------
++
++/* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
++ * All rights reserved.
++ *
++ * This package is an SSL implementation written
++ * by Eric Young (eay@cryptsoft.com).
++ * The implementation was written so as to conform with Netscapes SSL.
++ *
++ * This library is free for commercial and non-commercial use as long as
++ * the following conditions are aheared to.  The following conditions
++ * apply to all code found in this distribution, be it the RC4, RSA,
++ * lhash, DES, etc., code; not just the SSL code.  The SSL documentation
++ * included with this distribution is covered by the same copyright terms
++ * except that the holder is Tim Hudson (tjh@cryptsoft.com).
++ *
++ * Copyright remains Eric Young's, and as such any Copyright notices in
++ * the code are not to be removed.
++ * If this package is used in a product, Eric Young should be given attribution
++ * as the author of the parts of the library used.
++ * This can be in the form of a textual message at program startup or
++ * in documentation (online or textual) provided with the package.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *    "This product includes cryptographic software written by
++ *     Eric Young (eay@cryptsoft.com)"
++ *    The word 'cryptographic' can be left out if the rouines from the library
++ *    being used are not cryptographic related :-).
++ * 4. If you include any Windows specific code (or a derivative thereof) from
++ *    the apps directory (application code) you must include an acknowledgement:
++ *    "This product includes software written by Tim Hudson (tjh@cryptsoft.com)"
++ *
++ * THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ * The licence and distribution terms for any publically available version or
++ * derivative of this code cannot be changed.  i.e. this code cannot simply be
++ * copied and put under another distribution licence
++ * [including the GNU Public Licence.]
++ */
++-------------------------------------------------------------
++
++Soiled uses GPLv3 and the license is under soiled/soiled_LICENSE
++
++-------------------------------------------------------------
++
++bsd_pty.c has code from FreeBSD, here's the license:
++
++
++ Copyright (c) 1990, 1993, 1994
++	The Regents of the University of California.  All rights reserved.
++
++ Redistribution and use in source and binary forms, with or without
++ modification, are permitted provided that the following conditions
++ are met:
++ 1. Redistributions of source code must retain the above copyright
++    notice, this list of conditions and the following disclaimer.
++ 2. Redistributions in binary form must reproduce the above copyright
++    notice, this list of conditions and the following disclaimer in the
++    documentation and/or other materials provided with the distribution.
++ 4. Neither the name of the University nor the names of its contributors
++    may be used to endorse or promote products derived from this software
++    without specific prior written permission.
++
++ THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ SUCH DAMAGE.
++
++--------------------------------------------------------------
++
+--- dfterm2-0.17.orig/src/dfterm2_configure.cc
++++ dfterm2-0.17/src/dfterm2_configure.cc
+@@ -65,7 +65,9 @@ int main(int argc, char* argv[])
+         return -1;
+     }
+ 
+-    string database_file("dfterm2_database.sqlite3");
++    string home = getenv("HOME");
++
++    string database_file(home + "/.dfterm2/dfterm2_database.sqlite3");
+ 
+     Action action = Nothing;
+ 
+@@ -76,7 +78,7 @@ int main(int argc, char* argv[])
+     bool make_admin = false;
+ 
+     bool use_luaconf_database = true;
+-    string conffile("dfterm2.conf");
++    string conffile(home + "/.dfterm2/dfterm2.conf");
+ 
+     int i1;
+     for (i1 = 1; i1 < argc; ++i1)
+--- /dev/null
++++ dfterm2-0.17/src/interface_keymappings.conf
+@@ -0,0 +1,41 @@
++The meanings are:
++KEY KEYCODE SHIFT ALT CTRL
++
++KEY is the function for which the key is mapped. E.g. "focus4" or "hide_key".
++
++KEYCODE is the symbol or special name for the key. Special key names are in
++file symbols.txt. If you use a single letter, that will be used as the symbol.
++If you make letter+ctrl combinations, use an uppercase letter. letter+alt
++combinations should use lowercase letters unless you also want to require that
++shift key is also pressed down.
++
++SHIFT is 1 or 0. If it is 1, shift must be pressed down while pressing this key.
++ALT is 1 or 0. Meaning is the as for shift.
++CTRL is 1 or 0. As above.
++
++Configuration as follows.
++
++focus1 Alt1 0 0 0
++focus2 Alt2 0 0 0
++focus3 Alt3 0 0 0
++focus4 Alt4 0 0 0
++focus5 Alt5 0 0 0
++focus6 Alt6 0 0 0
++focus7 Alt7 0 0 0
++focus8 Alt8 0 0 0
++focus9 Alt9 0 0 0
++
++These are keys that focus to a window adjacent to currently focused window
++in given direction.
++
++focus_up    AltUp    0 0 0
++focus_down  AltDown  0 0 0
++focus_left  AltLeft  0 0 0
++focus_right AltRight 0 0 0
++
++lock_key       L 0 0 1
++fullscreen_key F 0 0 1
++hide_key       X 0 0 1
++border_key     R 0 0 1
++
++
+--- dfterm2-0.17.orig/src/main.cc
++++ dfterm2-0.17/src/main.cc
+@@ -53,7 +53,9 @@ int main(int argc, char* argv[])
+     local_directory_size = GetCurrentDirectoryW(59999, local_directory);
+ #endif
+ 
+-    log_file = TO_UNICODESTRING(string("dfterm2.log"));
++    string home = getenv("HOME");
++
++    log_file = TO_UNICODESTRING(string(home + "/.dfterm2/dfterm2.log"));
+     setlocale(LC_ALL, "");
+ 
+     sockets_initialize socket_initialization;
+@@ -72,7 +74,7 @@ int main(int argc, char* argv[])
+ 
+     bool use_http_service = false;
+ 
+-    string database_file("dfterm2_database.sqlite3");
++    string database_file(home + "/.dfterm2/dfterm2_database.sqlite3");
+ 
+     SocketAddress listen_address, http_listen_address, flash_policy_listen_address;
+     bool succeeded_resolve = false;
+@@ -89,7 +91,7 @@ int main(int argc, char* argv[])
+ 
+     bool use_luaconf_database = true;
+     bool use_luaconf_logfile = true;
+-    string conffile("dfterm2.conf");
++    string conffile(home + "/.dfterm2//dfterm2.conf");
+ 
+     int i1;
+     for (i1 = 1; i1 < argc; ++i1)
+--- /dev/null
++++ dfterm2-0.17/src/symbols.txt
+@@ -0,0 +1,142 @@
++This file lists the symbols understood by dfterm2 in
++interface_keymappings.conf file. Note that most of these
++can't actually be interpreted. The list is more or less
++equivalent to keys understood by curses.
++
++
++
++InvalidKey is never used.
++
++  InvalidKey
++  Break
++
++These four are arrow keys
++
++  ADown
++  AUp
++  ALeft
++  ARight
++
++These should work
++
++  Home
++  Backspace
++  F0
++  F1
++  F2
++  F3
++  F4
++  F5
++  F6
++  F7
++  F8
++  F9
++  F10
++  F11
++  F12
++
++Most of thse probably don't work. PgDown and PgUp should, and maybe Enter.
++
++  DeleteLine
++  InsertLine
++  DeleteChar
++  InsertChar
++  ExitInsert
++  Clear
++  ClearEoS
++  ClearEoL
++  SF
++  SR
++  PgDown
++  PgUp
++  SetTab
++  ClearTab
++  ClearAllTab
++  Enter
++  SReset
++  HReset
++  Print
++  HomeDown
++  A1
++  A3
++  B2
++  C1
++  C3
++  BTab
++  Beginning
++  Cancel
++  Close
++  Command
++  Copy
++  Create
++  End
++  Exit
++  Find
++  Help
++  Mark
++  Message
++  Mouse
++  Move
++  Next
++  Open
++  Options
++  Previous
++  Redo
++  Reference
++  Refresh
++  Replace
++  Resize
++  Restart
++  Resume
++  Save
++  SBeg
++  SCancel
++  SCommand
++  SCopy
++  SCreate
++  SDC
++  SDL
++  Select
++  SEnd
++  SEol
++  SExit
++  SFind
++  SHelp
++  SHome
++  SLeft
++  SMessage
++  SMove
++  SNext
++  SOptions
++  SPrevious
++  SPrint
++  SRedo
++  SReplace
++  SRight
++  SResume
++  SSave
++  SSuspend
++  SUndo
++  Suspend
++  Undo
++
++Use 0 for CTRL and ALT for these in keymappings file. These should work.
++
++  CtrlUp
++  CtrlDown
++  CtrlRight
++  CtrlLeft
++  Alt0
++  Alt1
++  Alt2
++  Alt3
++  Alt4
++  Alt5
++  Alt6
++  Alt7
++  Alt8
++  Alt9
++  AltUp
++  AltDown
++  AltRight
++  AltLeft
+--- /dev/null
++++ dfterm2-0.17/src/tests/connection_torture_test.py
+@@ -0,0 +1,37 @@
++#!/usr/bin/python
++
++import socket
++import math
++import random
++
++HOST="127.0.0.1"
++PORT=8000
++
++counter = 2000
++socketlist = [ ]
++
++while counter > 0:
++    counter = counter - 1
++    print("Torture test: counter %d" % counter)
++    
++    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
++    s.settimeout(0.05)
++    try:
++        s.connect( (HOST, PORT) )
++        socketlist.append(s)
++    except:
++        print("Could not connect")
++
++    if (random.random() < 0.1 and len(socketlist) > 0):
++        index = random.randint(0, len(socketlist)-1)
++        socketlist[index].close()
++        socketlist.pop(index)
++
++    for s in socketlist:
++        for i in range(0, random.randint(50, 100)):
++            try:
++                s.send(chr(random.randint(0, 255)))
++            except:
++                socketlist.remove(s)
++                break
++

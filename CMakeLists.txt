@@ -2,6 +2,11 @@ cmake_minimum_required (VERSION 2.8)
 project (dfterm2)
 
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
+
+FIND_PACKAGE(Ncursesw REQUIRED)
+INCLUDE_DIRECTORIES(${CURSES_INCLUDE_PATH})
+INCLUDE_DIRECTORIES("/usr/include/ncursesw")
+
 FIND_PACKAGE(Lua REQUIRED)
 INCLUDE_DIRECTORIES(${LUA_INCLUDE_PATH})
 
@@ -21,7 +26,7 @@ ENDIF(UNIX)
 
 FIND_PACKAGE (Threads REQUIRED)
 
-SET(NO_CURSES 1)
+SET(NO_CURSES 0)
 
 SET(COMMON_SOURCE src/main.cc src/client.cc src/logger.cc src/slot.cc src/cp437_to_unicode.cc src/configuration_interface.cc src/configuration_db.cc src/sqlite3.c src/state.cc src/usergroup_serialize.cc src/id.cc src/hash.cc src/rng.cc src/minimal_http_server.cc src/server_to_server_configuration_pair.cc src/server_to_server_session.cc src/lua_configuration.cc src/sockets.cc src/telnet.cc src/nanoclock.cc src/cpp_regexes.cc src/types.cc src/socketevents.cc src/socketaddressrange.cc src/termemu.cc src/utf8.cc src/interface_ncurses.cc src/keypress.cc)
 
@@ -36,6 +41,8 @@ ELSE (WIN32)
         target_link_libraries(dfterm2 dl)
     ENDIF (NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 ENDIF (WIN32)
+
+target_link_libraries(dfterm2 ${CURSES_NCURSESW_LIBRARY})
 
 SET(COMMON_LIBS ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES} ${ICU_LIBRARIES} ${PCRE_LIBRARIES} ${LUA_LIBRARIES})
 IF (WIN32)
@@ -69,6 +76,12 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 target_link_libraries(dfterm2 ${OPENSSL_LIBRARIES})
 target_link_libraries(dfterm2_configure ${OPENSSL_LIBRARIES})
 target_link_libraries(dfterm2_sha512 ${OPENSSL_LIBRARIES})
+
+#IF (NOT NO_CURSES)
+#    FIND_PACKAGE(NCursesw REQUIRED)
+#    INCLUDE_DIRECTORIES(${CURSES_INCLUDE_DIR})
+#    target_link_libraries(dfterm2 ${CURSES_LIBRARIES})
+#ENDIF(NOT NO_CURSES)
 
 include_directories(.)
 include_directories(${ICU_INCLUDE_PATH})

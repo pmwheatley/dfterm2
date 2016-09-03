@@ -1,2 +1,2 @@
-shlibs:Depends=libboost-system1.54.0, libboost-thread1.54.0, libc6 (>= 2.15), libgcc1 (>= 1:4.1.1), libicu52 (>= 52~m1-1~), liblua5.1-0, libpcre3, libssl1.0.0 (>= 1.0.0), libstdc++6 (>= 4.6)
+shlibs:Depends=libboost-system1.54.0, libboost-thread1.54.0, libc6 (>= 2.15), libgcc1 (>= 1:4.1.1), libicu52 (>= 52~m1-1~), liblua5.1-0, libncursesw5 (>= 5.6+20070908), libpcre3, libssl1.0.0 (>= 1.0.0), libstdc++6 (>= 4.6), libtinfo5
 misc:Depends=

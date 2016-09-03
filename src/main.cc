@@ -53,7 +53,9 @@ int main(int argc, char* argv[])
     local_directory_size = GetCurrentDirectoryW(59999, local_directory);
 #endif
 
-    log_file = TO_UNICODESTRING(string("dfterm2.log"));
+    string home = getenv("HOME");
+
+    log_file = TO_UNICODESTRING(string(home + "/.dfterm2/dfterm2.log"));
     setlocale(LC_ALL, "");
 
     sockets_initialize socket_initialization;
@@ -72,7 +74,7 @@ int main(int argc, char* argv[])
 
     bool use_http_service = false;
 
-    string database_file("dfterm2_database.sqlite3");
+    string database_file(home + "/.dfterm2/dfterm2_database.sqlite3");
 
     SocketAddress listen_address, http_listen_address, flash_policy_listen_address;
     bool succeeded_resolve = false;
@@ -89,7 +91,7 @@ int main(int argc, char* argv[])
 
     bool use_luaconf_database = true;
     bool use_luaconf_logfile = true;
-    string conffile("dfterm2.conf");
+    string conffile(home + "/.dfterm2//dfterm2.conf");
 
     int i1;
     for (i1 = 1; i1 < argc; ++i1)

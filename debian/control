@@ -2,7 +2,7 @@ Source: dfterm2
 Section: unknown
 Priority: optional
 Maintainer: Phillip Wheatley <pmwheatley@gmail.com>
-Build-Depends: debhelper (>= 8.0.0), cmake, libicu-dev, libpcre3-dev, libboost-thread-dev, liblua5.1-0-dev, libssl-dev
+Build-Depends: debhelper (>= 8.0.0), cmake, libicu-dev, libpcre3-dev, libboost-thread-dev, liblua5.1-0-dev, libssl-dev, libncursesw5-dev
 Standards-Version: 3.9.4
 Homepage: <insert the upstream URL, if relevant>
 #Vcs-Git: git://git.debian.org/collab-maint/dfterm2.git

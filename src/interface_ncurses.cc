@@ -8,6 +8,8 @@
 #include <sstream>
 #include "nanoclock.hpp"
 
+#include <curses.h>
+
 using namespace trankesbel;
 using namespace std;
 using namespace boost;

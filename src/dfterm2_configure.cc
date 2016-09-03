@@ -65,7 +65,9 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    string database_file("dfterm2_database.sqlite3");
+    string home = getenv("HOME");
+
+    string database_file(home + "/.dfterm2/dfterm2_database.sqlite3");
 
     Action action = Nothing;
 
@@ -76,7 +78,7 @@ int main(int argc, char* argv[])
     bool make_admin = false;
 
     bool use_luaconf_database = true;
-    string conffile("dfterm2.conf");
+    string conffile(home + "/.dfterm2/dfterm2.conf");
 
     int i1;
     for (i1 = 1; i1 < argc; ++i1)
