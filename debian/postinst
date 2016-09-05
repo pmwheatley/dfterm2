@@ -4,7 +4,7 @@ TMP_USER=$(logname)
 
 mkdir $HOME/.dfterm2
 
-cat > $HOME/.dfterm2 << EOF
+cat > $HOME/.dfterm2/dfterm2.conf << EOF
 database = "$HOME/.dfterm2/dfterm2_database.sqlite3"
 logfile = "$HOME/.dfterm2/dfterm2.log"
 
